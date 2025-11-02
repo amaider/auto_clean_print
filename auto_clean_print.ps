@@ -1,0 +1,173 @@
+%!PS
+
+% this postscript tries to replicate the EPSON EcoTank Test Print Pattern and prints it in a grid based on NTH variable
+% automatically calculates grid size: DIN A4 has 4x7 grid = 28 patterns per page, 56 per sheet (year has max 53 weeks)
+%
+% for each print increment the /NTH and update /DATESTRING with a script and send the ps file to the printer
+% use '-o sides=two-sided-long-edge' to auto 
+
+/NTH 28 def % nth print
+/DATESTRING (2025-03-31) def
+
+% Page Size: 72points -> 1 inch
+/PAGE_W 595.28 def
+/PAGE_H 841.89 def
+<< /PageSize [PAGE_W PAGE_H] >> setpagedevice
+
+
+% print stack, error if loop bigger than stack
+% STACK: n
+/debug {
+    /Menlo-Regular findfont 20 scalefont setfont
+    0 0 moveto
+    
+    /n exch def
+    0 1 n 1 sub {
+        pop % pop the loop index
+        10 string cvs show  % 10 should be string width, convertToString, show last stack item
+        (,) show
+    } for
+} def
+
+
+% EPSON PrecisionCore print head has size/height of 1.33 inches: (84.7 microns between nozzles)
+
+% EPSON TestPrint Pattern:
+%   height: 1.33 inch -> 95,76 points -> 24 cells -> single heigth 3.99 (quick maths)
+%   width: 0.85 inch -> 61,2 points (manually measured)
+
+% 72points -> 1 inch
+/CELL_H { 1.33 72 mul 24 div } def          % cell height
+/CELL_H_N { CELL_H -1 mul } def             % cell height negative
+/CELL_H_N2 { CELL_H_N 2 mul } def           % cell height negative 2 times to go to next starting point, see /drawLattice
+/CELL_W { 0.85 72 mul } def                 % cell width
+/CELL_W_N { 0.85 72 mul -1 mul } def        % cell width negative
+
+/TESTPRINT_HEIGHT { CELL_H 25 mul } def
+/TESTPRINT_WIDTH { CELL_W 2 mul 0.2 add } def
+/TESTPRINT_PADDING 10 def   % can be adjusted
+
+/ROWS_MAX { PAGE_H TESTPRINT_HEIGHT TESTPRINT_PADDING add div cvi } def % calculate the max rows, dont forget padding
+/COLUMNS_MAX { PAGE_W TESTPRINT_WIDTH TESTPRINT_PADDING add div cvi } def % calculate the max columns, dont forget padding
+/GRID_MAX { ROWS_MAX COLUMNS_MAX mul cvi } def % cvi = ConvertToInteger
+/GRID_HEIGHT { TESTPRINT_HEIGHT TESTPRINT_PADDING add ROWS_MAX mul TESTPRINT_PADDING sub } def % n-1 paddings!
+/GRID_WIDTH { TESTPRINT_WIDTH TESTPRINT_PADDING add COLUMNS_MAX mul TESTPRINT_PADDING sub } def % n-1 paddings!
+
+/GRID_PADDING_LEFT { PAGE_W GRID_WIDTH sub 2 div } def
+/GRID_PADDING_BOTTOM { PAGE_H GRID_HEIGHT sub 2 div TESTPRINT_HEIGHT add } def % pattern origin is top left, page origin bottom left. so we have to add pattern height at end but without padding
+
+
+% STACK: n
+/nToXY_toStack {
+    /n exch def % NTH from stack as variable
+
+    % calculate x and y coordinates
+    /NTH_MAX_GRID { n GRID_MAX mod } def  % if n over max grid size (grid full) start at 0
+    /TESTPRINT_ROW { NTH_MAX_GRID COLUMNS_MAX mod } def  % NTH starts at 0
+    /TESTPRINT_COLUMN { NTH_MAX_GRID COLUMNS_MAX div cvi } def
+
+    /INVERTED_COLUMN { ROWS_MAX 1 sub TESTPRINT_COLUMN sub } def % invert the column to start from the top left instead of bottom left (origin)
+
+    /TESTPRINT_OFFSET_X { TESTPRINT_ROW TESTPRINT_WIDTH TESTPRINT_PADDING add mul GRID_PADDING_LEFT add } def
+    /TESTPRINT_OFFSET_Y { INVERTED_COLUMN TESTPRINT_HEIGHT TESTPRINT_PADDING add mul GRID_PADDING_BOTTOM add } def
+
+    % push Y X onto stack, ORDER !!!
+    TESTPRINT_OFFSET_Y TESTPRINT_OFFSET_X
+} def
+
+% origin: top left
+% lattice drawn from top to bottom
+% STACK: n x y r g b
+/drawLattice {
+    setrgbcolor
+    moveto
+
+    % top line
+    CELL_W CELL_H_N rlineto
+
+    /n exch def % number or rows in lattice
+    0 1 n {
+        0 CELL_H_N rlineto % right line
+        CELL_W_N CELL_H rlineto % bottom line
+        0 CELL_H rlineto % left line
+        CELL_W CELL_H_N2 rmoveto % back to start point ( bottom right ) for next loop
+        pop % remove loop index from stack
+    } for
+    stroke
+} def
+
+% draws black yellow magenta cyan lattices. black has 24 cells, others have 7
+% STACK: x y
+/drawTestPrint {
+    gsave
+
+    % store as variables
+    /x exch def
+    /y exch def
+
+    % draw lattices
+    23  x                       y                           0 0 0 drawLattice   % black
+    %               +0.2 because printer doesnt print the lines separately under 0.2
+    6   x CELL_W add 0.2 add    y                           1 1 0 drawLattice   % yellow
+    6   x CELL_W add 0.2 add    y CELL_H_N 8.5 mul add      1 0 1 drawLattice   % magenta
+    6   x CELL_W add 0.2 add    y CELL_H_N 17 mul add       0 1 1 drawLattice   % cyan
+
+    % draw date
+    x CELL_W 1.3 mul add y CELL_H_N 8.5 mul add moveto
+    0 0 0 setrgbcolor
+    -3.75172907 rotate
+    DATESTRING show
+
+    grestore
+} def
+
+
+% draws big BYMC colors rectangles to purge colors
+/drawPrintPurge {
+    % /x PAGE_W 6 div def
+    % /y PAGE_H 4 div def
+    % /height PAGE_H 2 div def
+    % /width PAGE_W 6 div def
+
+    % 0 0 0 setrgbcolor   x                   y width height rectfill
+    % 1 1 0 setrgbcolor   x width 1 mul add   y width height rectfill
+    % 1 0 1 setrgbcolor   x width 2 mul add   y width height rectfill
+    % 0 1 1 setrgbcolor   x width 3 mul add   y width height rectfill
+
+    /x PAGE_W 6 div def
+    /y 50 def
+    /height TESTPRINT_HEIGHT def
+    /width PAGE_W 1.5 div def
+    
+    0 1 1 setrgbcolor x y height 0 mul add width height rectfill
+    1 0 1 setrgbcolor x y height 1 mul add width height rectfill
+    1 1 0 setrgbcolor x y height 2 mul add width height rectfill
+    0 0 0 setrgbcolor x y height 3 mul add width height rectfill
+    
+    /Helvetica findfont 24 scalefont setfont
+    /text (DONE) def
+    /textWidth text stringwidth pop def % pop y part, so only width remains
+    PAGE_W textWidth sub 2 div 25 moveto
+    text show
+} def
+
+
+% if first NTH of 2nd page, print purge rectangles on first page first and then print pattern on second page. USE lp command with  '-o sides=two-sided-long-edge'
+NTH 28 eq {
+    drawPrintPurge
+    showpage
+} if
+
+% print nth pattern
+0 setlinewidth
+/Menlo-Regular findfont 4 scalefont setfont
+NTH nToXY_toStack drawTestPrint % calc x and y from nth and draw
+
+
+% Shows possible patterns per page
+% 0 1 27 { nToXY_toStack drawTestPrint } for
+
+% Page Border
+% 0 0 PAGE_W PAGE_H rectstroke
+
+showpage
