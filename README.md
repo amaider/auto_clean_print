@@ -1,5 +1,5 @@
 # Automated Print Script
-The postscript file tries to replicate the EPSON EcoTank alignment print pattern but printed in a different spot each time. 4x7 = 28 patterns per page, 56 per sheet for DIN A4. (One year can have a maximum of 53 weeks.)
+The postscript file tries to replicate the EPSON EcoTank nozzle check pattern but printed in a different spot each time. 4x7 = 28 patterns (with padding 10) per page, 56 per sheet for DIN A4. (One year can have a maximum of 53 weeks.)
 
 The bash script will be called by home assistant automation.
 It updates the date and print number in the postscript file to align the print pattern. And then prints it.
@@ -58,6 +58,6 @@ shell_command:
 /PAGE_H 841.89 def
 ```
 
-## Alignment Pattern:
-The pattern is 1.33 inches high, which is also the EPSON PrecisionCore print head height. That should mean that all nozzles will be used in one print head pass. This postscript is a 'handmade' copy, as close as possible to the original alignment pattern.
-![Alignment Pattern](pattern.jpg)
+## Nozzle Check Pattern:
+The pattern is 1.33 inches high, which is also the EPSON PrecisionCore print head height. That should mean that all nozzles will be used in one print head pass. This postscript is a 'handmade' copy, as close as possible to the original pattern.
+![Nozzle Check Pattern](pattern.png)

@@ -1,6 +1,6 @@
 %!PS
 
-% this postscript tries to replicate the EPSON EcoTank Test Print Pattern and prints it in a grid based on NTH variable
+% this postscript tries to replicate the EPSON EcoTank nozzle check pattern and prints it in a grid based on NTH variable
 % automatically calculates grid size: DIN A4 has 4x7 grid (with padding 10) = 28 patterns per page, 56 per sheet (year has max 53 weeks)
 %
 % for each print increment the /NTH and update /DATESTRING with a script and send the ps file to the printer
@@ -33,10 +33,10 @@
 
 % EPSON PrecisionCore print head has size/height of 1.33 inches: (84.7 microns between nozzles)
 
-% EPSON TestPrint Pattern:
+% EPSON nozzle check pattern:
+%   24 cells x 16 steps = 400 nozzles (black), 8 * 16 = 128 nozzles (colors)
 %   height: 1.33 inch -> 95,76 points -> 24 cells -> single heigth 3.99 (quick maths)
 %   width: 0.85 inch -> 61,2 points in 16 steps (manually measured)
-%   24 cells x 16 steps = 400 nozzles (black), 8 * 16 = 128 nozzles (colors)
 
 % 72points -> 1 inch
 /CELL_H { 1.33 72 mul 24 div } def          % cell height
@@ -170,7 +170,7 @@ NTH drawNthPattern % calc x and y from nth and draw
 
 
 % Shows all possible patterns per page
-0 1 GRID_MAX { drawNthPattern } for
+% 0 1 GRID_MAX { drawNthPattern } for
 
 % Page Border
 % 0 0 PAGE_W PAGE_H rectstroke
