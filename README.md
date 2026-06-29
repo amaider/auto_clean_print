@@ -20,8 +20,15 @@ For that to work without a password we need a ssh private key inside the docker 
 ssh <user>@<host>	# to Raspberry Pi
 cd <config>/custom_resources
 git clone 'https://github.com/amaider/auto_clean_print.git'
-cd auto_clean_print
+```
 
+#### Set ownership of the folder to non root user if necessary so 'sed' can overwrite the .ps file
+```bash
+sudo chown -R "$USER":"$USER" auto_clean_print
+```
+
+#### Set up ssh keys
+```bash
 docker ps -a
 docker exec -it <container-name> /bin/bash	# open shell in home assistant container
 mkdir -p /root/.ssh
